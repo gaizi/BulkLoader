@@ -12,17 +12,17 @@ package loadinginfo
 		
 		public function getBytesTotal():uint
 		{
-			return 0;
+			return bytesTotal;
 		}
 		
 		public function getBytesLoaded():uint
 		{
-			return 0;
+			return bytesLoaded;
 		}
 		
 		public function getPercentage():Number
 		{
-			return 0;
+			return percentage;
 		}
 	}
 }

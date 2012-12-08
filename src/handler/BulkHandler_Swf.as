@@ -29,7 +29,6 @@ package handler
 			_loader = new Loader();
 			_loader.contentLoaderInfo.addEventListener(ProgressEvent.PROGRESS, onProgress/*, false, 0, true*/);
 			_loader.contentLoaderInfo.addEventListener(Event.COMPLETE, onComplete/*, false, 0, true*/);
-			_loader.contentLoaderInfo.addEventListener(Event.INIT, onStarted/*, false, 0, true*/);
 			_loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, onError/*, false, 100, true*/);
 			_loader.contentLoaderInfo.addEventListener(SecurityErrorEvent.SECURITY_ERROR, onError/*, false, 0, true*/);
 			_loader.contentLoaderInfo.addEventListener(Event.OPEN, onStarted/*, false, 0, true*/);

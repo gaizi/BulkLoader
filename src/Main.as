@@ -24,10 +24,10 @@ package
 			var loadList:BulkList = new BulkList();
 			loadList.addEventListener(BulkEvent.ITEM_COMPLETE, onItemComplet);
 			
-			for (var i:int=0; i<1; i++)
+			for (var i:int=0; i<100; i++)
 				loadList.addItem("assets/1 (9).png", {});
 			
-			BulkLoader.execute(loadList);
+			BulkLoader.to(loadList);
 			
 			
 			//
@@ -38,7 +38,7 @@ package
 		
 		protected function onItemComplet(event:BulkEvent):void
 		{
-			trace("file:"+event.item.url, " has load complet");
+//			trace("file:"+event.item.url, " has load complet");
 			
 			addChild(event.itemLoadingInfo.getBitmap());
 		}

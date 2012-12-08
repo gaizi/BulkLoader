@@ -57,8 +57,6 @@ package handler
 		
 		public function onStarted(event:Event):void
 		{
-			loadingInfo.bytesLoaded = 0;
-			
 			var e:BulkItemLoadingEvent = new BulkItemLoadingEvent(BulkItemLoadingEvent.ITEM_START);
 			e.fileInfo = fileInfo;
 			e.loadingInfo = loadingInfo;
@@ -67,6 +65,8 @@ package handler
 		
 		public function onProgress(event:*):void
 		{
+			loadingInfo.percentage = loadingInfo.bytesLoaded/loadingInfo.bytesTotal;
+			
 			var e:BulkItemLoadingEvent = new BulkItemLoadingEvent(BulkItemLoadingEvent.ITEM_PROGRESS);
 			e.fileInfo = fileInfo;
 			e.loadingInfo = loadingInfo;

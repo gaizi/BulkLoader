@@ -20,6 +20,7 @@ package comply
 	
 	import loadinginfo.BulkItemLoadingInfo;
 	import loadinginfo.BulkListLoadingInfo;
+	import loadinginfo.IBulkItemLoadingInfo;
 	import loadinginfo.IBulkListLoadingInfo;
 
 	public class BulkLoader
@@ -50,7 +51,8 @@ package comply
 		private var _loadedLinePool:Vector.<IBulkFile> = new Vector.<IBulkFile>(); /*文件池*/
 		private var _loading:Vector.<int> = new Vector.<int>(); /*正在加载的文件*/
 		
-		private var _fileTypeToHandlerCls:Dictionary; /*BulkFileType-BulkHandler*/
+		private var _fileTypeToHandlerCls:Dictionary; /*BulkFileType-BulkHandler Class Type*/
+		private var _fileToHandlerInstance:Dictionary = new Dictionary(true); /*BulkFile-BulkHandler*/
 		private var _fileToList:Dictionary = new Dictionary(true); /*BulkFile-BulkList*/
 		private var _fileToitem:Dictionary = new Dictionary(true); /*BulkFile-BulkListItem*/
 		private var _itemToFile:Dictionary = new Dictionary(true); /*BulkListItem-BulkFile*/
@@ -106,6 +108,7 @@ package comply
 			loadHandler.addEventListener(BulkItemLoadingEvent.ITEM_PROGRESS, onItemProgress);
 			loadHandler.addEventListener(BulkItemLoadingEvent.ITEM_COMPLETED, onItemComplete);
 			loadHandler.addEventListener(BulkItemLoadingEvent.ITEM_ERROR, onItemError);
+			_fileToHandlerInstance[loadHandler] = loadHandler;
 			loadHandler.load();
 		}
 		
@@ -236,16 +239,23 @@ package comply
 			listLoadingInfo.percentage = 0;
 			
 			var listItems:Vector.<IBulkListItem> = list.getItems();
+			var listItemsInLoadingCount:uint = 0;
 			for (var i:int=0; i<listItems.length; i++)
 			{
 				var item:IBulkListItem = listItems[i];
 				var file:IBulkFile = _itemToFile[item];
-				var fileLoadingInfo:BulkItemLoadingInfo = _fileToLoadingInfo[file];
+				var fileLoadingInfo:IBulkItemLoadingInfo = _fileToLoadingInfo[file];
 				
-				listLoadingInfo.bytesTotal += fileLoadingInfo.bytesTotal;
-				listLoadingInfo.bytesLoaded += fileLoadingInfo.bytesLoaded;
+				listLoadingInfo.bytesTotal += fileLoadingInfo.getBytesTotal();
+				listLoadingInfo.bytesLoaded += fileLoadingInfo.getBytesLoaded();
+				
+				if (fileLoadingInfo.getBytesTotal() > 0 && fileLoadingInfo.getBytesLoaded() > 0)
+					listItemsInLoadingCount ++;
+				
+				var percentage:Number = fileLoadingInfo.getPercentage();
+				if (!isNaN(percentage))
+					listLoadingInfo.percentage += percentage/listItems.length;
 			}
-			listLoadingInfo.percentage = listLoadingInfo.bytesLoaded / listLoadingInfo.bytesTotal;
 			
 			return listLoadingInfo;
 		}
@@ -259,14 +269,28 @@ package comply
 		protected function isEndItemOfList(item:IBulkListItem, list:IBulkList):Boolean
 		{
 			var items:Vector.<IBulkListItem> = list.getItems();
-			return (items.length > 0) && (items[items.length-1] == item);
+			return (items.length > 0) && (items.pop() == item);
 		}
 		
 		////////////////////////////////////////////////////////////////////////////
-		public static function execute(list:IBulkList):void
+		public static function to(list:IBulkList):void
 		{
 			_instance.addIntoLoadedLine(list);
 			_instance.activeLoader();
+		}
+		
+		public static function getItemLoadingInfo(paramKey:String, paramValue:*):IBulkItemLoadingInfo
+		{
+			var loadedFiles:Vector.<IBulkFile> = _instance._loadedLinePool.slice(0, _instance._loadedProcessIn);
+			while (loadedFiles.length)
+			{
+				var file:IBulkFile = loadedFiles.pop();
+				var item:IBulkListItem = _instance._fileToitem[file];
+				if (item.param && 
+					item.param[paramKey] == paramValue)
+					return _instance._fileToLoadingInfo[file];
+			}
+			return null;
 		}
 	}
 }
