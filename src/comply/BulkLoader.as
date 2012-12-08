@@ -6,17 +6,21 @@ package comply
 	import blist.IBulkListItem;
 	
 	import events.BulkEvent;
-	import events.BulkLoadingEvent;
+	import events.BulkItemLoadingEvent;
 	
 	import flash.utils.Dictionary;
 	
 	import handler.BulkHandler;
-	import handler.BulkHandler_Loader;
-	import handler.BulkHandler_NetStream;
+	import handler.BulkHandler_Binary;
+	import handler.BulkHandler_Css;
+	import handler.BulkHandler_Img;
 	import handler.BulkHandler_Sound;
-	import handler.BulkHandler_UrlLoader;
-	import handler.BulkHandler_UrlStream;
-	import handler.BulkLoadingInfo;
+	import handler.BulkHandler_Swf;
+	import handler.BulkHandler_Xml;
+	
+	import loadinginfo.BulkItemLoadingInfo;
+	import loadinginfo.BulkListLoadingInfo;
+	import loadinginfo.IBulkListLoadingInfo;
 
 	public class BulkLoader
 	{
@@ -31,39 +35,45 @@ package comply
 		
 		private function inits():void
 		{
-			_fileToHandlerCls = new Dictionary(true);
-			_fileToHandlerCls[BulkLoaderDefine.FILE_BINARY] = BulkHandler_UrlLoader;
-			_fileToHandlerCls[BulkLoaderDefine.FILE_CSS] = BulkHandler_UrlLoader;
-			_fileToHandlerCls[BulkLoaderDefine.FILE_FLV] = BulkHandler_NetStream;
-			_fileToHandlerCls[BulkLoaderDefine.FILE_IMAGE] = BulkHandler_Loader;
-			_fileToHandlerCls[BulkLoaderDefine.FILE_MP3] = BulkHandler_Sound;
-			_fileToHandlerCls[BulkLoaderDefine.FILE_SWF] = BulkHandler_Loader;
-			_fileToHandlerCls[BulkLoaderDefine.FILE_WAV] = BulkHandler_Sound;
-			_fileToHandlerCls[BulkLoaderDefine.FILE_XML] = BulkHandler_UrlLoader;
-			_fileToHandlerCls[BulkLoaderDefine.FILE_ZIP] = BulkHandler_UrlStream;
+			_fileTypeToHandlerCls = new Dictionary(true);
+			_fileTypeToHandlerCls[BulkLoaderDefine.FILE_BINARY] = BulkHandler_Binary;
+			_fileTypeToHandlerCls[BulkLoaderDefine.FILE_CSS] = BulkHandler_Css;
+			_fileTypeToHandlerCls[BulkLoaderDefine.FILE_FLV] = null;
+			_fileTypeToHandlerCls[BulkLoaderDefine.FILE_IMAGE] = BulkHandler_Img;
+			_fileTypeToHandlerCls[BulkLoaderDefine.FILE_MP3] = BulkHandler_Sound;
+			_fileTypeToHandlerCls[BulkLoaderDefine.FILE_SWF] = BulkHandler_Swf;
+			_fileTypeToHandlerCls[BulkLoaderDefine.FILE_WAV] = BulkHandler_Sound;
+			_fileTypeToHandlerCls[BulkLoaderDefine.FILE_XML] = BulkHandler_Xml;
 		}
 		
 		private var _loadedProcessIn:uint = 0; /*文件池加载进度*/
 		private var _loadedLinePool:Vector.<IBulkFile> = new Vector.<IBulkFile>(); /*文件池*/
 		private var _loading:Vector.<int> = new Vector.<int>(); /*正在加载的文件*/
 		
-		private var _fileToList:Dictionary = new Dictionary(true);
-		private var _fileToHandlerCls:Dictionary;
-		private var _fileToLoadingInfo:Dictionary = new Dictionary(true);
-		private var _fileToListItem:Dictionary = new Dictionary(true);
-
+		private var _fileTypeToHandlerCls:Dictionary; /*BulkFileType-BulkHandler*/
+		private var _fileToList:Dictionary = new Dictionary(true); /*BulkFile-BulkList*/
+		private var _fileToitem:Dictionary = new Dictionary(true); /*BulkFile-BulkListItem*/
+		private var _itemToFile:Dictionary = new Dictionary(true); /*BulkListItem-BulkFile*/
+		private var _fileToLoadingInfo:Dictionary = new Dictionary(true); /*BulkFile-BulkItemLoadingInfo*/
+		private var _listToLoadingInfo:Dictionary = new Dictionary(true); /*BulkList-BulkListLoadingInfo*/
 		
 		private function addIntoLoadedLine(bulkList:IBulkList):void
 		{
-			var items:Vector.<IBulkListItem> = bulkList.getItems();
-			for (var i:int=0; i<items.length; i++)
+			var listItems:Vector.<IBulkListItem> = bulkList.getItems(); /*Copy浅列表*/
+			
+			for (var i:int=0; i<listItems.length; i++)
 			{
-				var file:IBulkFile = new BulkFile(items[i]);
+				var listItem:IBulkListItem = listItems[i];
+				var file:IBulkFile = new BulkFile(listItem); /*创建文件并添加到文件池*/
 				_loadedLinePool.push(file);
 				
 				_fileToList[file] = bulkList;
-				_fileToListItem[file] = items[i];
+				_fileToitem[file] = listItem;
+				_itemToFile[listItem] = file;
+				_fileToLoadingInfo[file] = new BulkItemLoadingInfo();
 			}
+			
+			_listToLoadingInfo[bulkList] = new BulkListLoadingInfo();
 		}
 		
 		private function activeLoader():void
@@ -79,34 +89,31 @@ package comply
 				_loading.push(file); /*更新计数器*/
 				_loadedProcessIn ++;
 			}
-			
-//			trace("_loading.length:" + _loading.length);
 		}
 		
 		private function gotoLoadFile(file:IBulkFile):void
 		{
-			var handlerCls:Class = _fileToHandlerCls[file.fileType];
+			var handlerCls:Class = _fileTypeToHandlerCls[file.fileType];
 			if (!handlerCls) /*找不到该文件类型的加载处理程序*/
 			{
-				handlerCls = _fileToHandlerCls[BulkLoaderDefine.FILE_BINARY];
+//				handlerCls = _fileTypeToHandlerCls[BulkLoaderDefine.FILE_BINARY];
 				// or to new error,,
+				new Error("you may load fileType("+file.fileType+") of BulkLoader is not support.");
 			}
 			
-			var loadingInfo:BulkLoadingInfo = new BulkLoadingInfo();
-			_fileToLoadingInfo[file] = loadingInfo;
-
-			var loadHandler:BulkHandler = new handlerCls(file, loadingInfo);
-			loadHandler.addEventListener(BulkLoadingEvent.ITEM_START, onItemStart);
-			loadHandler.addEventListener(BulkLoadingEvent.ITEM_PROGRESS, onItemProgress);
-			loadHandler.addEventListener(BulkLoadingEvent.ITEM_COMPLETED, onItemComplete);
-			loadHandler.addEventListener(BulkLoadingEvent.ITEM_ERROR, onItemError);
+			var loadHandler:BulkHandler = new handlerCls(file, _fileToLoadingInfo[file]);
+			loadHandler.addEventListener(BulkItemLoadingEvent.ITEM_START, onItemStart);
+			loadHandler.addEventListener(BulkItemLoadingEvent.ITEM_PROGRESS, onItemProgress);
+			loadHandler.addEventListener(BulkItemLoadingEvent.ITEM_COMPLETED, onItemComplete);
+			loadHandler.addEventListener(BulkItemLoadingEvent.ITEM_ERROR, onItemError);
 			loadHandler.load();
 		}
 		
-		protected function onItemError(event:BulkLoadingEvent):void
+		/////////////////////////////////////////////////////////////////////////////////////////////
+		protected function onItemError(event:BulkItemLoadingEvent):void
 		{
 			var file:IBulkFile = event.fileInfo;
-			var listItem:IBulkListItem = _fileToListItem[file];
+			var listItem:IBulkListItem = _fileToitem[file];
 			var list:BulkList = _fileToList[file];
 			
 			/*更新计数*/
@@ -118,79 +125,129 @@ package comply
 			}
 			
 			/*throw event*/
-			var bulkEvent:BulkEvent;
-			var errorEvent:BulkEvent = new BulkEvent(BulkEvent.ITEM_ERROR);
-			var isFirstItemOfList:Boolean = isFirstItemOfList(listItem, list);
-			var isEndItemOfList:Boolean = isEndItemOfList(listItem, list);
-			if (!isFirstItemOfList && !isEndItemOfList)
-			{
-				list.dispatchEvent(errorEvent);
-			}
-			else
-			{
-				if (isFirstItemOfList)
-				{
-					bulkEvent = new BulkEvent(BulkEvent.BULK_START);
-					list.dispatchEvent(bulkEvent);
-					
-					list.dispatchEvent(errorEvent);
-				}
-				
-				if (isEndItemOfList)
-				{
-					list.dispatchEvent(errorEvent);
-					
-					bulkEvent = new BulkEvent(BulkEvent.BULK_COMPLETE);
-					list.dispatchEvent(bulkEvent);
-				}
-			}
-		}
-		
-		protected function onItemComplete(event:BulkLoadingEvent):void
-		{
-			var file:IBulkFile = event.fileInfo;
-			var listItem:IBulkListItem = _fileToListItem[file];
-			var list:BulkList = _fileToList[file];
+			if (isFirstItemOfList(listItem, list))
+				throwListStart(file);
 			
-			/*更新计数*/
-			var index:int = _loading.indexOf(file);
-			if (index != -1)
-			{
-				_loading.splice(index, 1);
-				activeLoader();
-			}
-			
-			/*throw event*/
-			var itemEvent:BulkEvent = new BulkEvent(BulkEvent.ITEM_COMPLETE);
-			list.dispatchEvent(itemEvent);
+			var itemErrorEvent:BulkEvent = new BulkEvent(BulkEvent.ITEM_ERROR);
+			itemErrorEvent.item = listItem;
+			itemErrorEvent.itemLoadingInfo = event.loadingInfo;
+			itemErrorEvent.list = list;
+			itemErrorEvent.listLoadingInfo = getLatestListLoadingInfo(list);
+			list.dispatchEvent(itemErrorEvent);
 			
 			if (isEndItemOfList(listItem, list))
-			{
-				var bulkEvent:BulkEvent = new BulkEvent(BulkEvent.BULK_COMPLETE);
-				list.dispatchEvent(bulkEvent);
-			}
+				throwListComplete(file);
 		}
 		
-		protected function onItemStart(event:BulkLoadingEvent):void
+		private function throwListComplete(file:IBulkFile):void
+		{
+			var listItem:IBulkListItem = _fileToitem[file];
+			var list:BulkList = _fileToList[file];
+			
+			var listCompleteEvent:BulkEvent = new BulkEvent(BulkEvent.LIST_COMPLETE);
+			listCompleteEvent.item = listItem;
+			listCompleteEvent.itemLoadingInfo = _fileToLoadingInfo[file];
+			listCompleteEvent.list = list;
+			listCompleteEvent.listLoadingInfo = getLatestListLoadingInfo(list);
+			list.dispatchEvent(listCompleteEvent);
+		}
+		
+		private function throwListStart(file:IBulkFile):void
+		{
+			var listItem:IBulkListItem = _fileToitem[file];
+			var list:BulkList = _fileToList[file];
+			
+			var listStartEvent:BulkEvent = new BulkEvent(BulkEvent.LIST_START);
+			listStartEvent.item = listItem;
+			listStartEvent.itemLoadingInfo = _fileToLoadingInfo[file];
+			listStartEvent.list = list;
+			listStartEvent.listLoadingInfo = getLatestListLoadingInfo(list);
+			list.dispatchEvent(listStartEvent);
+		}
+		
+		protected function onItemComplete(event:BulkItemLoadingEvent):void
 		{
 			var file:IBulkFile = event.fileInfo;
-			var listItem:IBulkListItem = _fileToListItem[file];
+			var listItem:IBulkListItem = _fileToitem[file];
+			var list:BulkList = _fileToList[file];
+			
+			/*更新计数*/
+			var index:int = _loading.indexOf(file);
+			if (index != -1)
+			{
+				_loading.splice(index, 1);
+				activeLoader();
+			}
+			
+			/*throw event*/
+			var itemCompleteEvent:BulkEvent = new BulkEvent(BulkEvent.ITEM_COMPLETE);
+			itemCompleteEvent.item = listItem;
+			itemCompleteEvent.itemLoadingInfo = event.loadingInfo;
+			itemCompleteEvent.list = list;
+			itemCompleteEvent.listLoadingInfo = getLatestListLoadingInfo(list);
+			list.dispatchEvent(itemCompleteEvent);
+			
+			if (isEndItemOfList(listItem, list))
+				throwListComplete(file);
+		}
+		
+		protected function onItemStart(event:BulkItemLoadingEvent):void
+		{
+			var file:IBulkFile = event.fileInfo;
+			var listItem:IBulkListItem = _fileToitem[file];
 			var list:BulkList = _fileToList[file];
 			
 			/*throw event*/
 			if (isFirstItemOfList(listItem, list))
-			{
-				var bulkEvent:BulkEvent = new BulkEvent(BulkEvent.BULK_START);
-				list.dispatchEvent(bulkEvent);
-			}
+				throwListStart(file);
 			
-			var itemEvent:BulkEvent = new BulkEvent(BulkEvent.ITEM_START);
-			list.dispatchEvent(itemEvent);
+			var itemStartEvent:BulkEvent = new BulkEvent(BulkEvent.ITEM_START);
+			itemStartEvent.item = listItem;
+			itemStartEvent.itemLoadingInfo = event.loadingInfo;
+			itemStartEvent.list = list;
+			itemStartEvent.listLoadingInfo = getLatestListLoadingInfo(list);
+			list.dispatchEvent(itemStartEvent);
 		}
 		
-		protected function onItemProgress(event:BulkLoadingEvent):void
+		protected function onItemProgress(event:BulkItemLoadingEvent):void
 		{
+			var file:IBulkFile = event.fileInfo;
+			var listItem:IBulkListItem = _fileToitem[file];
+			var list:BulkList = _fileToList[file];
 			
+			var itemProgressEvent:BulkEvent = new BulkEvent(BulkEvent.ITEM_START);
+			var listProgressEvent:BulkEvent = new BulkEvent(BulkEvent.LIST_PROGRESS);
+			itemProgressEvent.item = listProgressEvent.item = listItem;
+			itemProgressEvent.itemLoadingInfo = listProgressEvent.itemLoadingInfo = event.loadingInfo;
+			itemProgressEvent.list = listProgressEvent.list = list;
+			itemProgressEvent.listLoadingInfo = listProgressEvent.listLoadingInfo = getLatestListLoadingInfo(list);
+			list.dispatchEvent(itemProgressEvent);
+			list.dispatchEvent(listProgressEvent);
+		}
+		
+		private function getLatestListLoadingInfo(list:IBulkList):IBulkListLoadingInfo
+		{
+			var listLoadingInfo:BulkListLoadingInfo = _listToLoadingInfo[list];
+			if (!listLoadingInfo)
+				return null;
+			
+			listLoadingInfo.bytesTotal = 0;
+			listLoadingInfo.bytesLoaded = 0;
+			listLoadingInfo.percentage = 0;
+			
+			var listItems:Vector.<IBulkListItem> = list.getItems();
+			for (var i:int=0; i<listItems.length; i++)
+			{
+				var item:IBulkListItem = listItems[i];
+				var file:IBulkFile = _itemToFile[item];
+				var fileLoadingInfo:BulkItemLoadingInfo = _fileToLoadingInfo[file];
+				
+				listLoadingInfo.bytesTotal += fileLoadingInfo.bytesTotal;
+				listLoadingInfo.bytesLoaded += fileLoadingInfo.bytesLoaded;
+			}
+			listLoadingInfo.percentage = listLoadingInfo.bytesLoaded / listLoadingInfo.bytesTotal;
+			
+			return listLoadingInfo;
 		}
 		
 		protected function isFirstItemOfList(item:IBulkListItem, list:IBulkList):Boolean

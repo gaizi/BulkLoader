@@ -1,6 +1,5 @@
 package handler
 {
-	import comply.BulkLoaderDefine;
 	import comply.IBulkFile;
 	
 	import flash.events.ErrorEvent;
@@ -10,13 +9,15 @@ package handler
 	import flash.events.SecurityErrorEvent;
 	import flash.net.URLLoader;
 	import flash.net.URLRequest;
-	import flash.system.LoaderContext;
+	import flash.text.StyleSheet;
 	
-	public class BulkHandler_UrlLoader extends BulkHandler
+	import loadinginfo.BulkItemLoadingInfo;
+	
+	public class BulkHandler_Xml extends BulkHandler
 	{
 		protected var _loader:URLLoader;
 		
-		public function BulkHandler_UrlLoader(bulkFile:IBulkFile, bulkLoadingInfo:BulkLoadingInfo)
+		public function BulkHandler_Xml(bulkFile:IBulkFile, bulkLoadingInfo:BulkItemLoadingInfo)
 		{
 			super(bulkFile, bulkLoadingInfo);
 		}
@@ -41,24 +42,22 @@ package handler
 			}
 		}
 		
-//		override public function onStarted(evt:Event):void
-//		{
-//			super.onStarted(evt);
-//		}
-//		
-//		override public function onProgress(evt:*):void
-//		{
-//			super.onProgress(evt);
-//		}
-//		
-//		override public function onComplete(evt:Event):void
-//		{
-//			super.onComplete(evt);
-//		}
-//		
-//		override public function onError(evt:ErrorEvent):void
-//		{
-//			super.onError(evt);
-//		}
+		override public function onProgress(event:*):void
+		{
+			loadingInfo.bytesLoaded = event.bytesLoaded;
+			loadingInfo.bytesTotal = event.bytesTotal;
+			super.onProgress(event);
+		}
+		
+		override public function onComplete(event:Event):void
+		{
+			try{
+				loadingInfo.xml = new XML(_loader.data);
+			}catch(e  : Error){
+				loadingInfo.xml = null;
+				dispatchEvent(createErrorEvent(e));
+			}
+			super.onComplete(event);
+		}
 	}
 }

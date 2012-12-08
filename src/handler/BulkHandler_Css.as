@@ -1,6 +1,5 @@
 package handler
 {
-	import comply.BulkLoaderDefine;
 	import comply.IBulkFile;
 	
 	import flash.events.ErrorEvent;
@@ -8,17 +7,17 @@ package handler
 	import flash.events.IOErrorEvent;
 	import flash.events.ProgressEvent;
 	import flash.events.SecurityErrorEvent;
-	import flash.media.Sound;
+	import flash.net.URLLoader;
 	import flash.net.URLRequest;
-	import flash.system.LoaderContext;
+	import flash.text.StyleSheet;
 	
 	import loadinginfo.BulkItemLoadingInfo;
 	
-	public class BulkHandler_Sound extends BulkHandler
+	public class BulkHandler_Css extends BulkHandler
 	{
-		protected var _loader:Sound;
+		protected var _loader:URLLoader;
 		
-		public function BulkHandler_Sound(bulkFile:IBulkFile, bulkLoadingInfo:BulkItemLoadingInfo)
+		public function BulkHandler_Css(bulkFile:IBulkFile, bulkLoadingInfo:BulkItemLoadingInfo)
 		{
 			super(bulkFile, bulkLoadingInfo);
 		}
@@ -27,7 +26,7 @@ package handler
 		{
 			super.load();
 			
-			_loader = new Sound();
+			_loader = new URLLoader();
 			_loader.addEventListener(ProgressEvent.PROGRESS, onProgress, false, 0, true);
 			_loader.addEventListener(Event.COMPLETE, onComplete, false, 0, true);
 			_loader.addEventListener(IOErrorEvent.IO_ERROR, onError, false, 0, true);
@@ -37,16 +36,10 @@ package handler
 			var urlRequest:URLRequest = new URLRequest(fileInfo.fileUrl);
 			
 			try {
-				_loader.load(urlRequest/*, SoundLoaderContext*/);/*TODO: test for security error thown*/
+				_loader.load(urlRequest);/*TODO: test for security error thown*/
 			} catch(e:SecurityError) {
 				onError(createErrorEvent(e));
 			}
-		}
-		
-		override public function onStarted(event:Event):void
-		{
-			loadingInfo.sound = _loader;
-			super.onStarted(event);
 		}
 		
 		override public function onProgress(event:*):void
@@ -54,6 +47,14 @@ package handler
 			loadingInfo.bytesLoaded = event.bytesLoaded;
 			loadingInfo.bytesTotal = event.bytesTotal;
 			super.onProgress(event);
+		}
+		
+		override public function onComplete(event:Event):void
+		{
+			var css:StyleSheet = new StyleSheet();
+			css.parseCSS(_loader.data);
+			loadingInfo.css = css;
+			super.onComplete(event);
 		}
 	}
 }

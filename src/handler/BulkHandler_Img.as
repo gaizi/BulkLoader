@@ -4,20 +4,20 @@ package handler
 	import comply.IBulkFile;
 	
 	import flash.display.Loader;
-	import flash.events.ErrorEvent;
 	import flash.events.Event;
-	import flash.events.HTTPStatusEvent;
 	import flash.events.IOErrorEvent;
 	import flash.events.ProgressEvent;
 	import flash.events.SecurityErrorEvent;
 	import flash.net.URLRequest;
 	import flash.system.LoaderContext;
 	
-	public class BulkHandler_Loader extends BulkHandler
+	import loadinginfo.BulkItemLoadingInfo;
+	
+	public class BulkHandler_Img extends BulkHandler
 	{
 		protected var _loader:Loader;
 		
-		public function BulkHandler_Loader(bulkFile:IBulkFile, bulkLoadingInfo:BulkLoadingInfo)
+		public function BulkHandler_Img(bulkFile:IBulkFile, bulkLoadingInfo:BulkItemLoadingInfo)
 		{
 			super(bulkFile, bulkLoadingInfo);
 		}
@@ -44,24 +44,17 @@ package handler
 			}
 		}
 		
-//		override public function onStarted(evt:Event):void
-//		{
-//			super.onStarted(evt);
-//		}
-//		
-//		override public function onProgress(evt:*):void
-//		{
-//			super.onProgress(evt);
-//		}
-//		
-//		override public function onComplete(evt:Event):void
-//		{
-//			super.onComplete(evt);
-//		}
-//		
-//		override public function onError(evt:ErrorEvent):void
-//		{
-//			super.onError(evt);
-//		}
+		override public function onProgress(event:*):void
+		{
+			loadingInfo.bytesLoaded = event.bytesLoaded;
+			loadingInfo.bytesTotal = event.bytesTotal;
+			super.onProgress(event);
+		}
+		
+		override public function onComplete(event:Event):void
+		{
+			loadingInfo.bitmap = event.target.content;
+			super.onComplete(event);
+		}
 	}
 }

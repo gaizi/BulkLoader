@@ -10,7 +10,6 @@ package comply
 		public static const FILE_XML:String = "file_xml";
 		public static const FILE_CSS:String = "file_css";
 		public static const FILE_MP3:String = "file_mp3";
-		public static const FILE_ZIP:String = "file_zip";
 		public static const FILE_WAV:String = "file_wav";
 		public static const FILE_FLV:String = "file_flv";
 		public static const FILE_IMAGE:String = "file_image";
@@ -32,7 +31,6 @@ package comply
 				case "xml":return FILE_XML;break;
 				case "css":return FILE_CSS;break;
 				case "mp3":return FILE_MP3;break;
-				case "zip":return FILE_ZIP;break;
 				case "wav":return FILE_WAV;break;
 				case "flv":return FILE_FLV;break;
 				
@@ -49,7 +47,6 @@ package comply
 			FILE_XML, 
 			FILE_CSS, 
 			FILE_MP3, 
-			FILE_ZIP, 
 			FILE_WAV, 
 			FILE_FLV, 
 			FILE_IMAGE, 

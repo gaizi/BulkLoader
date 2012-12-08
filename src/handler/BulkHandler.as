@@ -2,23 +2,24 @@ package handler
 {
 	import comply.IBulkFile;
 	
-	import events.BulkLoadingEvent;
+	import events.BulkItemLoadingEvent;
 	
 	import flash.events.ErrorEvent;
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
+	import loadinginfo.BulkItemLoadingInfo;
 	
-	[Event(name="start", type="events.BulkLoadingEvent")]
-	[Event(name="progress", type="events.BulkLoadingEvent")]
-	[Event(name="completed", type="events.BulkLoadingEvent")]
-	[Event(name="error", type="events.BulkLoadingEvent")]
+	[Event(name="itemStart", type="events.BulkItemLoadingEvent")]
+	[Event(name="itemProgress", type="events.BulkItemLoadingEvent")]
+	[Event(name="itemCompleted", type="events.BulkItemLoadingEvent")]
+	[Event(name="itemError", type="events.BulkItemLoadingEvent")]
 	
 	public class BulkHandler extends EventDispatcher
 	{
 		private var _fileInfo:IBulkFile;
-		private var _loadingInfo:BulkLoadingInfo;
+		private var _loadingInfo:BulkItemLoadingInfo;
 		
-		public function BulkHandler(bulkFile:IBulkFile, bulkLoadingInfo:BulkLoadingInfo)
+		public function BulkHandler(bulkFile:IBulkFile, bulkLoadingInfo:BulkItemLoadingInfo)
 		{
 			this._fileInfo = bulkFile;
 			this._loadingInfo = bulkLoadingInfo;
@@ -29,7 +30,7 @@ package handler
 			return _fileInfo;
 		}
 		
-		public function get loadingInfo():BulkLoadingInfo
+		public function get loadingInfo():BulkItemLoadingInfo
 		{
 			return _loadingInfo;
 		}
@@ -44,9 +45,21 @@ package handler
 			
 		}
 		
+		public function stop():void
+		{
+			
+		}
+		
+		public function dispose():void
+		{
+			
+		}
+		
 		public function onStarted(event:Event):void
 		{
-			var e:BulkLoadingEvent = new BulkLoadingEvent(BulkLoadingEvent.ITEM_START);
+			loadingInfo.bytesLoaded = 0;
+			
+			var e:BulkItemLoadingEvent = new BulkItemLoadingEvent(BulkItemLoadingEvent.ITEM_START);
 			e.fileInfo = fileInfo;
 			e.loadingInfo = loadingInfo;
 			dispatchEvent(e);
@@ -54,7 +67,7 @@ package handler
 		
 		public function onProgress(event:*):void
 		{
-			var e:BulkLoadingEvent = new BulkLoadingEvent(BulkLoadingEvent.ITEM_PROGRESS);
+			var e:BulkItemLoadingEvent = new BulkItemLoadingEvent(BulkItemLoadingEvent.ITEM_PROGRESS);
 			e.fileInfo = fileInfo;
 			e.loadingInfo = loadingInfo;
 			dispatchEvent(e);
@@ -62,7 +75,7 @@ package handler
 		
 		public function onComplete(event:Event):void
 		{
-			var e:BulkLoadingEvent = new BulkLoadingEvent(BulkLoadingEvent.ITEM_COMPLETED);
+			var e:BulkItemLoadingEvent = new BulkItemLoadingEvent(BulkItemLoadingEvent.ITEM_COMPLETED);
 			e.fileInfo = fileInfo;
 			e.loadingInfo = loadingInfo;
 			dispatchEvent(e);
@@ -70,7 +83,7 @@ package handler
 		
 		public function onError(event:ErrorEvent):void
 		{
-			var e:BulkLoadingEvent = new BulkLoadingEvent(BulkLoadingEvent.ITEM_ERROR);
+			var e:BulkItemLoadingEvent = new BulkItemLoadingEvent(BulkItemLoadingEvent.ITEM_ERROR);
 			e.fileInfo = fileInfo;
 			e.loadingInfo = loadingInfo;
 			dispatchEvent(e);

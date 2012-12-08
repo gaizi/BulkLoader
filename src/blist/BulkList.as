@@ -5,6 +5,15 @@ package blist
 	import flash.events.IEventDispatcher;
 	import flash.utils.Dictionary;
 	
+	/*Event Types*/
+	[Event(name="itemStart", type="events.BulkEvent")]
+	[Event(name="itemProgress", type="events.BulkEvent")]
+	[Event(name="itemComplete", type="events.BulkEvent")]
+	[Event(name="itemError", type="events.BulkEvent")]
+	[Event(name="listStart", type="events.BulkEvent")]
+	[Event(name="listProgress", type="events.BulkEvent")]
+	[Event(name="listComplete", type="events.BulkEvent")]
+	
 	public class BulkList extends EventDispatcher implements IBulkList
 	{
 		public function BulkList()
