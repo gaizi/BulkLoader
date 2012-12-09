@@ -15,14 +15,14 @@ package
 	import flash.net.URLLoader;
 	import flash.net.URLRequest;
 	
-	public class Main extends Sprite
+	public class Test extends Sprite
 	{
 		private var _xml:XML;
 		
-		public function Main()
+		public function Test()
 		{
 			var loadList:BulkList = new BulkList();
-			loadList.addEventListener(BulkEvent.ITEM_COMPLETE, onItemComplet);
+			loadList.addEventListener(BulkEvent.ITEM_COMPLETED, onItemComplet);
 			
 			for (var i:int=0; i<100; i++)
 				loadList.addItem("assets/1 (9).png", {});

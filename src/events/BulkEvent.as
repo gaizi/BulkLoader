@@ -13,11 +13,11 @@ package events
 		/*Event Types*/
 		public static const ITEM_START : String = "itemStart";
 		public static const ITEM_PROGRESS : String = "itemProgress";
-		public static const ITEM_COMPLETE : String = "itemComplete";
+		public static const ITEM_COMPLETED : String = "itemComplete";
 		public static const ITEM_ERROR : String = "itemError";
 		public static const LIST_START : String = "listStart";
 		public static const LIST_PROGRESS : String = "listProgress";
-		public static const LIST_COMPLETE : String = "listComplete";
+		public static const LIST_COMPLETED : String = "listComplete";
 		
 		/*available*/
 		public var item:IBulkListItem;

@@ -16,7 +16,7 @@ package comply
 		public static const FILE_BINARY:String = "file_binary";
 		
 		//
-		public static const MAX_CONCURRENT:uint = 2;
+		public static const MAX_CONCURRENT:uint = 1;
 		
 		//
 		public static function getFileTypeByUrl(url:String):String

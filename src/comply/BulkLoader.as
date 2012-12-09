@@ -147,7 +147,7 @@ package comply
 			var listItem:IBulkListItem = _fileToitem[file];
 			var list:BulkList = _fileToList[file];
 			
-			var listCompleteEvent:BulkEvent = new BulkEvent(BulkEvent.LIST_COMPLETE);
+			var listCompleteEvent:BulkEvent = new BulkEvent(BulkEvent.LIST_COMPLETED);
 			listCompleteEvent.item = listItem;
 			listCompleteEvent.itemLoadingInfo = _fileToLoadingInfo[file];
 			listCompleteEvent.list = list;
@@ -183,7 +183,7 @@ package comply
 			}
 			
 			/*throw event*/
-			var itemCompleteEvent:BulkEvent = new BulkEvent(BulkEvent.ITEM_COMPLETE);
+			var itemCompleteEvent:BulkEvent = new BulkEvent(BulkEvent.ITEM_COMPLETED);
 			itemCompleteEvent.item = listItem;
 			itemCompleteEvent.itemLoadingInfo = event.loadingInfo;
 			itemCompleteEvent.list = list;
@@ -218,7 +218,7 @@ package comply
 			var listItem:IBulkListItem = _fileToitem[file];
 			var list:BulkList = _fileToList[file];
 			
-			var itemProgressEvent:BulkEvent = new BulkEvent(BulkEvent.ITEM_START);
+			var itemProgressEvent:BulkEvent = new BulkEvent(BulkEvent.LIST_PROGRESS);
 			var listProgressEvent:BulkEvent = new BulkEvent(BulkEvent.LIST_PROGRESS);
 			itemProgressEvent.item = listProgressEvent.item = listItem;
 			itemProgressEvent.itemLoadingInfo = listProgressEvent.itemLoadingInfo = event.loadingInfo;
